@@ -2,6 +2,7 @@ package piifilterprocessor
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hypertrace/collector/processors/piifilterprocessor/filters"
 	"go.opentelemetry.io/collector/consumer"
@@ -49,8 +50,14 @@ func (p *piiFilterProcessor) ProcessTraces(ctx context.Context, td pdata.Traces)
 
 				span.Attributes().ForEach(func(key string, value pdata.AttributeValue) {
 					for _, filter := range p.filters {
-						if _, err := filter.RedactAttribute(key, value); err != nil {
-							p.logger.Sugar().Errorf("failed to filter attributes: %v", err)
+						if isRedacted, err := filter.RedactAttribute(key, value); err != nil {
+							if isRedacted {
+								break
+							}
+
+							if !errors.Is(err, filters.ErrUnprocessableValue) {
+								p.logger.Sugar().Errorf("failed to filter attributes: %v", err)
+							}
 						}
 					}
 				})
