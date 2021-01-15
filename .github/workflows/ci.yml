@@ -42,6 +42,8 @@ jobs:
             GIT_COMMIT=${GITHUB_SHA}
       - name: Create traces log
         run: touch traces-log.json
+      - name: dump environment
+        run: env
       - name: Run collector image
         uses: addnab/docker-run-action@v1
         with:
